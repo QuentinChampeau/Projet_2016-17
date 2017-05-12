@@ -24,17 +24,24 @@
 #define PORTTCP 1234
 #define HOST "localhost" /* 127.0.0.1 */
 
-int port = 1027;
-int nouveau_port() {
-    /* compris entre 1024-65535 */
-    return port++;
+#define MAXPENDING 1
+
+
+struct sockaddr_in creationConnexionTCP () {
+    struct sockaddr_in server;
+
+
+    memset(&server, 0, sizeof(server));
+    server.sin_family = AF_INET;                /* Internet address family */
+    server.sin_addr.s_addr = htonl(INADDR_ANY); /* Any incoming interface */
+    server.sin_port = htons(PORTTCP);      /* Local port */
+
+
+    return(server);
 }
 
-//the thread function
-void *connection_handler(void *);
-
 int connexionTCP () {
-    int socket_desc , client_sock , c , read_size;
+    int socket_desc, client_sock, c , read_size;
     struct sockaddr_in server , client;
     char client_message[2000];
 
@@ -50,7 +57,7 @@ int connexionTCP () {
     //Prepare the sockaddr_in structure
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY; /* nous sommes un serveur, nous acceptons n'importe quelle adresse */
-    server.sin_port = htons( port );
+    server.sin_port = htons( PORTTCP );
 
     //Bind
     if( bind(socket_desc,(struct sockaddr *)&server , sizeof(server)) < 0)
@@ -101,25 +108,25 @@ int connexionTCP () {
 
 int main(int argc, char *argv[])
 {
-    pthread_t thread_id;
 
     /*********************************************************/
     /*************** Multicast *******************************/
     /*********************************************************/
 
-    int sock;
+    int sockMulticast, socketTCP, socketClient, socketServer;
     struct sockaddr_in groupSock;
     struct in_addr localInterface;
     unsigned char mc_ttl=1;     /* time to live (hop count) */
+    struct coordonnees coord;
 
     /* create a socket for sending to the multicast address */
-    if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP /* ou 0 */)) < 0) {
+    if ((sockMulticast = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP /* ou 0 */)) < 0) {
         perror("socket");
         exit(1);
     }
 
     /* set the TTL (time to live/hop count) for the send */
-    if(setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, (char *) &mc_ttl, sizeof(mc_ttl)) < 0)
+    if(setsockopt(sockMulticast, IPPROTO_IP, IP_MULTICAST_TTL, (char *) &mc_ttl, sizeof(mc_ttl)) < 0)
     {
       perror("Setting local interface error");
       exit(1);
@@ -138,19 +145,56 @@ int main(int argc, char *argv[])
     groupSock.sin_port = htons(PORTMULTI);
     groupSock.sin_addr.s_addr = inet_addr(MULTICASTGROUP);
 
-    /* envoie d'un port à un avion pour la socket TCP */
-    char message[100];
-    sprintf(message, "%d", port);
+    /***********************************/
+    /****** socket multicast crée ******/
+    /***********************************/
 
-    while (1) {
-        int send_len = sizeof(message);
-        if (sendto(sock, &message, send_len, 0, (struct sockaddr *) &groupSock, sizeof(groupSock)) != send_len) {
+    int pid = fork();
+
+    struct sockaddr_in nouveauServer = creationConnexionTCP();
+
+    if (pid == 0) {
+        /**
+         * On envoie via le multicastla structure de la socket TCP
+         */
+        int send_len = sizeof(nouveauServer);
+        if (sendto(sockMulticast, &nouveauServer, send_len, 0, (struct sockaddr *) &groupSock, sizeof(groupSock)) != send_len) {
            perror("sendto");
            exit(1);
         }
         sleep(1);
-        //pthread_create  (&thread_id,  NULL, &connexionTCP, NULL);
+    } else {
+        /**
+         * On lit les données de l'avion via TCP
+         */
+        /* Create socket for incoming connections */
+        if ((socketTCP = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+            perror("socket() failed");
+
+        /* Bind to the local address */
+        if (bind(socketTCP, (struct sockaddr *) &nouveauServer, sizeof(nouveauServer)) < 0)
+            perror("bind() failed");
+
+        /* Mark the socket so it will listen for incoming connections */
+        if (listen(socketTCP, MAXPENDING) < 0)
+            perror("listen() failed");
+
+        socklen_t tailleCoord;
+        socklen_t taillesocketServer;
+        while(1) {
+            tailleCoord = sizeof(struct coordonnees);
+            taillesocketServer = sizeof(socketServer);
+            if ((socketClient = accept(socketTCP, (struct sockaddr *) &coord, &tailleCoord)) < 0) {
+                perror("accept failed");
+            }
+            if(recvfrom(socketTCP, &coord, tailleCoord, 0, (struct sockaddr *) &socketServer, &taillesocketServer) < 0) {
+                perror("recvfrom");
+            }
+            printf("avion y %d\n", coord.y);
+
+        }
     }
+
 
     /*connexionTCP
     multicast();
