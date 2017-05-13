@@ -1,4 +1,5 @@
 # Projet_2016-17
+#http://www.csd.uoc.gr/~hy556/material/tutorials/cs556-3rd-tutorial.pdf
 #L'avion doit recevoir les données pour se connecter à du TCP via le multicast du SGCA
 #Une fois fait il envoie ses données de navigation via socket TCP
 
