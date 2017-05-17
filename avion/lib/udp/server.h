@@ -1,5 +1,5 @@
-#ifndef _LIB_UDP_CLIENT_
-	#define _LIB_UDP_CLIENT_
+#ifndef _LIB_UDP_SERVER_
+	#define _LIB_UDP_SERVER_
 
 
 #include <time.h>

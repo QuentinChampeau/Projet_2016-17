@@ -16,9 +16,9 @@
 
 /* multicast */
 /*  1024 à 65535 */
-#define PORTMULTI 12345
+#define PORTMULTI   8888
 /* 224.0.0.0 à 239.255.255.255 */
-#define MULTICASTGROUP "225.0.0.37"
+#define MULTICASTGROUP  0x010000e0 // 224.0.0.1
 
 /* connexion TCP */
 #define PORTTCP 1234
@@ -108,10 +108,25 @@ int connexionTCP () {
 
 int main(int argc, char *argv[])
 {
+    int TCPServer, UDPMcastClient, UDPServerView, UDPServerCtrl;
+    
+    /**
+     * Multicast
+     * UDP client
+     */
+    struct sockaddr_in tmpInfo;
+    struct in_addr* ip = malloc( sizeof(struct in_addr));
+    ip->s_addr         = MULTICASTGROUP;
+    //char* buffer       = malloc( MAX_BUF_LEN );
 
-    /*********************************************************/
-    /*************** Multicast *******************************/
-    /*********************************************************/
+    uint32_t tcpaddr;
+    uint16_t tcpport;
+
+    if (UDPMulticast(&UDPMcastClient, MULTICASTGROUP, PORTMULTI, &tmpInfo) < 0) {
+        perror("connectTCP SGCA multicast");
+        exit(EXIT_FAILURE);
+    }
+
 
     int sockMulticast, socketTCP, socketClient, socketServer;
     struct sockaddr_in groupSock;

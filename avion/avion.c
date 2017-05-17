@@ -1,5 +1,5 @@
 #include "avion.h"
-#include "lib/udp/client.h"
+#include "lib/udp/server.h"
 #include "lib/tcp/client.h"
 
 // caractéristiques du déplacement de l'avion
@@ -24,10 +24,9 @@ char numero_vol[6];
  */
 struct sockaddr_in serverInfo; /* client */
 
-int conn_sock;
-int comm_sock;
+int conn_sock; /* socket de connexion */
+int comm_sock; /* socket de communication */
 
-int sock;
 
 /********************************
  ***  3 fonctions à implémenter
@@ -38,11 +37,10 @@ int sock;
  */
 int ouvrir_communication(){
 
-	
 	struct sockaddr_in tmpInfo;
 	struct in_addr* ip = malloc( sizeof(struct in_addr));
-	ip->s_addr = MULTICASTGROUP;
-	char* buffer = malloc( MAX_BUF_LEN );
+	ip->s_addr         = MULTICASTGROUP;
+	char* buffer       = malloc( MAX_BUF_LEN );
 	int nb;
 
 	uint32_t tcpaddr;
@@ -51,7 +49,7 @@ int ouvrir_communication(){
 	/* [1] Connect to SGCA Multicast socket
 	=========================================================*/
 	/* (1) Create UDP Socket */
-	if( dropUDP(&conn_sock, MULTICASTGROUP, PORTMULTI, &tmpInfo) < 0 ){
+	if( UDPMulticast(&conn_sock, MULTICASTGROUP, PORTMULTI, &tmpInfo) < 0 ) {
 		printf("Cannot join Multicast Group %s:%d\n", inet_ntoa(*ip), PORTMULTI);
 		return 0;
 	}
@@ -59,7 +57,7 @@ int ouvrir_communication(){
 	/* (2) Wait for SGCA credentials */
 	nb = recv(conn_sock, buffer, MAX_BUF_LEN, 0);
 
-		
+
 	printf("received : %d bytes\n", nb);
 
 	memcpy(&tcpaddr, buffer,                  sizeof(uint32_t));
@@ -90,7 +88,7 @@ void fermer_communication()
 {
   // fonction à implémenter qui permet de fermer la communication
   // avec le gestionnaire de vols
- close(sock);
+ /*close(sock);*/
 }
 
 void envoyer_caracteristiques()
@@ -218,9 +216,10 @@ void se_deplacer()
 {
  while(1)
  {
-  sleep(PAUSE);
   calcul_deplacement();
   envoyer_caracteristiques();
+
+  sleep(PAUSE);
 }
 }
 
