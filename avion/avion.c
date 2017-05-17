@@ -1,5 +1,6 @@
-
 #include "avion.h"
+#include "lib/udp/client.h"
+#include "lib/tcp/client.h"
 
 // caractéristiques du déplacement de l'avion
 struct deplacement dep;
@@ -13,147 +14,76 @@ char numero_vol[6];
 /**
  * Gestion du multicast
  */
-#define PORTMULTI 12345
-#define MULTICASTGROUP "225.0.0.37"
+#define PORTMULTI 	8888
+#define MULTICASTGROUP	0x010000e0 // 224.0.0.1
+#define MAX_BUF_LEN	256
 
 
 /**
  * Gestion connexion TCP
  */
-struct sockaddr_in addr_avion; /* client */
-struct sockaddr_in addr_SGCA; /* server */
-struct hosten *host_SGCA; /* identifiant de la machine où se trouve le server */
+struct sockaddr_in serverInfo; /* client */
+
+int conn_sock;
+int comm_sock;
 
 int sock;
 
 /********************************
  ***  3 fonctions à implémenter
  ********************************/
-int ouvrir_communication_TCP() {
-   int value = 1;
-   //Create socket
-   if ((sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-      perror("Could not create socket");
-      exit(EXIT_FAILURE);
-   }
-   puts("Socket created");
-
-   //Connect to remote server
-   if (connect(sock , (struct sockaddr *) &addr_SGCA , sizeof(addr_SGCA)) < 0) {
-      perror("connect failed. Error");
-      return 1;
-   }
-
-   puts("Connected\n");
-
-   /**
-    * Envoie les caractéristiques à l'SGCA
-    */
-   while(1) {
-      envoyer_caracteristiques();
-      return 0;
-   }
-}
 
 /**
  * Crée la socket d'écoute du serveur multicast SGCA.
  */
-int ouvrir_communication() {
-   int nbytes,addrlen;
-   struct ip_mreq mreq;
-   struct sockaddr_in addr_envoyeur; /* server */
+int ouvrir_communication(){
 
-   u_int reuse=1;            /*** MODIFICATION TO ORIGINAL */
-   int a=0;
-   int port;
-   char *endptr;
+	
+	struct sockaddr_in tmpInfo;
+	struct in_addr* ip = malloc( sizeof(struct in_addr));
+	ip->s_addr = MULTICASTGROUP;
+	char* buffer = malloc( MAX_BUF_LEN );
+	int nb;
 
-   port = PORTMULTI;
+	uint32_t tcpaddr;
+	uint16_t tcpport;
 
-   /* create what looks like an ordinary UDP socket */
-   if ((sock=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP /* ou 0 */)) < 0) {
-      perror("socket");
-      exit(EXIT_FAILURE);
-   }
-  //else printf("Opening datagram socket....OK.\n");
+	/* [1] Connect to SGCA Multicast socket
+	=========================================================*/
+	/* (1) Create UDP Socket */
+	if( dropUDP(&conn_sock, MULTICASTGROUP, PORTMULTI, &tmpInfo) < 0 ){
+		printf("Cannot join Multicast Group %s:%d\n", inet_ntoa(*ip), PORTMULTI);
+		return 0;
+	}
 
-   /**
-    * Enable SO_REUSEADDR to allow multiple instances of this
-    * allow multiple sockets to use the same PORT number
-    */
-   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof(reuse)) < 0) {
-      perror("Reusing ADDR failed");
-      close(sock);
-      exit(EXIT_FAILURE);
-   }
-   //else printf("Setting SO_REUSEADDR...OK.\n");
+	/* (2) Wait for SGCA credentials */
+	nb = recv(conn_sock, buffer, MAX_BUF_LEN, 0);
 
-   /* set up destination address */
-   memset(&addr_avion, 0, sizeof(addr_avion));
-   addr_avion.sin_family=AF_INET;
-   addr_avion.sin_addr.s_addr=htonl(INADDR_ANY); /* N.B.: differs from sender */
-   addr_avion.sin_port=htons(PORTMULTI);
+		
+	printf("received : %d bytes\n", nb);
 
-  /* bind to receive address */
-   if (bind(sock, (struct sockaddr *) &addr_avion, sizeof(addr_avion))/* < 0*/) {
-      perror("bind");
-      close(sock);
-      exit(EXIT_FAILURE);
-   }
-  //else printf("Binding datagram socket...OK.\n");
+	memcpy(&tcpaddr, buffer,                  sizeof(uint32_t));
+	memcpy(&tcpport, buffer+sizeof(uint32_t), sizeof(uint16_t));
+	close(conn_sock);
+	tcpaddr = ntohl(tcpaddr);
+	tcpport = ntohs(tcpport);
 
-  /**
-   * construct an IGMP join request structure
-   * use setsockopt() to request that the kernel join a multicast group
-   */
-   mreq.imr_multiaddr.s_addr = inet_addr(MULTICASTGROUP);
-   mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+	ip->s_addr = htonl(tcpaddr);
+	printf("received %s:%d\n", inet_ntoa(*ip), tcpport);
 
-   /* send an ADD MEMBERSHIP message via setsockopt */
-   if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq,sizeof(mreq)) < 0) {
-      perror("setsockopt");
-      close(sock);
-      exit(EXIT_FAILURE);
-   }
-   // else printf("Adding multicast group...OK.\n");
 
-  /***********************************/
-  /****** socket multicast crée ******/
-  /***********************************/
+	/* [2] ConnectTCP
+	=========================================================*/
+	if( connectTCP(&comm_sock, tcpaddr, tcpport) < 0 ){
+		printf("Cannot connect to TCP server\n");
+		return 0;
+	}
 
-  /**
-   * On va récupérer sockaddr_in crée par le SGCA pour la connexion TCP
-   */
+	strcpy(buffer, "It works!!");
+	printf("Sending buffer to TCP server\n");
+	send(comm_sock, buffer, strlen(buffer), 0);
 
-   while (a == 0) {
-      //memset(addr_SGCA, 0, sizeof(addr_SGCA));
-      addrlen=sizeof(addr_envoyeur);
-      memset(&addr_envoyeur, 0, addrlen);
-
-      /* block waiting to receive packet */
-      nbytes = recvfrom(sock, &addr_SGCA, sizeof(addr_SGCA), 0,
-         (struct sockaddr *) &addr_envoyeur, (socklen_t *) &addrlen);
-      if (nbytes < 0) {
-         perror("recvfrom");
-         exit(EXIT_FAILURE);
-      }
-      printf("Received %d bytes from %s: ", nbytes, inet_ntoa(addr_envoyeur.sin_addr));
-      char* ipString = inet_ntoa(addr_envoyeur.sin_addr);
-      
-      if(ipString) {
-         printf("SGCA trouve\n");
-         /* send a DROP MEMBERSHIP message via setsockopt */
-         if ((setsockopt(sock, IPPROTO_IP, IP_DROP_MEMBERSHIP, (void*) &mreq, sizeof(mreq))) < 0) {
-            perror("setsockopt() failed");
-            exit(1);
-         }
-         fermer_communication();
-         a = 1;
-         //ouvrir_communication_TCP();
-      }
-      //printf("x = %d, y = %d, altitude = %d\n",coord.x, coord.y, coord.altitude);
-   } /* end while */
-   return 1;
+	return 1;
 }
 
 void fermer_communication()
@@ -165,6 +95,7 @@ void fermer_communication()
 
 void envoyer_caracteristiques()
 {
+/*
    // nombre d'octets envoyés/reçus
    int nb_octets;
    // fonction à implémenter qui envoie l'ensemble des caractéristiques
@@ -174,6 +105,7 @@ void envoyer_caracteristiques()
       perror("send failed");
       exit(EXIT_FAILURE);
    }
+*/
 
 }
 
