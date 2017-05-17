@@ -8,7 +8,7 @@ int connectTCP(int* pSocket, const uint32_t pAddr, const uint16_t pPort){
 	/* [0] initialize variables
 	=========================================================*/
 	struct sockaddr_in* target;
-	
+
 
 	/* [1] Create socket
 	=========================================================*/
@@ -22,7 +22,7 @@ int connectTCP(int* pSocket, const uint32_t pAddr, const uint16_t pPort){
 	=========================================================*/
 	target->sin_family      = AF_INET;
 	target->sin_port        = htons(pPort);
-	target->sin_addr.s_addr = htonl(pAddr);
+	target->sin_addr.s_addr = inet_addr(pAddr);
 
 
 	/* [3] Connect to server

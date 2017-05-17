@@ -13,6 +13,6 @@
 #include <time.h>
 #include <string.h>
 
-int UDPMulticast(int* pSocket, const uint32_t pAddr, const uint16_t pPort, struct sockaddr_in* pInfo);
+int UDPMulticast(int* pSocket, const char *pAddr, const uint16_t pPort, struct sockaddr_in* pInfo);
 
 #endif

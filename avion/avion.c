@@ -15,7 +15,7 @@ char numero_vol[6];
  * Gestion du multicast
  */
 #define PORTMULTI 	8888
-#define MULTICASTGROUP	0x010000e0 // 224.0.0.1
+#define MULTICASTGROUP	"224.0.0.1" // 0x010000e0  224.0.0.1
 #define MAX_BUF_LEN	256
 
 
@@ -37,9 +37,8 @@ int comm_sock; /* socket de communication */
  */
 int ouvrir_communication(){
 
-	struct sockaddr_in tmpInfo;
-	struct in_addr* ip = malloc( sizeof(struct in_addr));
-	ip->s_addr         = MULTICASTGROUP;
+	struct sockaddr_in tmpInfo, from_addr;
+
 	char* buffer       = malloc( MAX_BUF_LEN );
 	int nb;
 
@@ -50,12 +49,17 @@ int ouvrir_communication(){
 	=========================================================*/
 	/* (1) Create UDP Socket */
 	if( UDPMulticast(&conn_sock, MULTICASTGROUP, PORTMULTI, &tmpInfo) < 0 ) {
-		printf("Cannot join Multicast Group %s:%d\n", inet_ntoa(*ip), PORTMULTI);
+		printf("Cannot join Multicast Group %s:%d\n", MULTICASTGROUP, PORTMULTI);
 		return 0;
 	}
 
 	/* (2) Wait for SGCA credentials */
-	nb = recv(conn_sock, buffer, MAX_BUF_LEN, 0);
+  // receive packet from socket
+  socklen_t socklen = sizeof(struct sockaddr_in);
+  memset(&from_addr, 0, socklen);
+  printf("attente données de %s:%d\n", MULTICASTGROUP, PORTMULTI);
+   nb = recvfrom(conn_sock, buffer, MAX_BUF_LEN, 0, (struct sockaddr*)&from_addr, &socklen);
+	//nb = recv(conn_sock, buffer, MAX_BUF_LEN, 0);
 
 
 	printf("received : %d bytes\n", nb);
@@ -66,8 +70,8 @@ int ouvrir_communication(){
 	tcpaddr = ntohl(tcpaddr);
 	tcpport = ntohs(tcpport);
 
-	ip->s_addr = htonl(tcpaddr);
-	printf("received %s:%d\n", inet_ntoa(*ip), tcpport);
+	
+	printf("received %s:%d\n", MULTICASTGROUP, tcpport);
 
 
 	/* [2] ConnectTCP

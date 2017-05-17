@@ -1,4 +1,4 @@
-#include "serveur.h"
+#include "server.h"
 
 int connectTCP(int *pSocket, const uint32_t pAddr, const uint16_t pPort) {
 
@@ -6,7 +6,7 @@ int connectTCP(int *pSocket, const uint32_t pAddr, const uint16_t pPort) {
 	=========================================================*/
 	struct sockaddr_in* target;
 
-	memset(&target, 0, sizeof(server));
+	//memset(&target, 0, sizeof(struct sockaddr_in));
 	/* [1] Create socket
 	=========================================================*/
 	*pSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -34,8 +34,8 @@ int connectTCP(int *pSocket, const uint32_t pAddr, const uint16_t pPort) {
 		return -1;
 	}
 
-
-	if( accept(*pSocket, (struct sockaddr*) target, sizeof(struct sockaddr_in)) < 0 ) {
+	socklen_t addrlen = sizeof(struct sockaddr_in);
+	if( accept(*pSocket, (struct sockaddr*) target, &addrlen) < 0 ) {
 		perror("accept serveur");
 		return -1;
 	}
