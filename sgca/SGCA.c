@@ -30,6 +30,51 @@
 
 struct avionS AVIONS;
 
+
+char *RemplirInfosTousAvions() {
+    char *s = malloc(AVIONS.n * sizeof(struct avion));
+    char *s2 = malloc(sizeof(struct avion));
+    sprintf(s, "%d\n", AVIONS.n);
+    int i;
+    for (i=0; i<AVIONS.n; i++) {
+        sprintf(s2, "%s%d%d%d%d%d\n", 
+            AVIONS.data[i].num_vol, AVIONS.data[i].x, AVIONS.data[i].y, AVIONS.data[i].altitude, AVIONS.data[i].cap, AVIONS.data[i].vitesse);
+        strcat(s, s2);
+    }
+    free(s2);
+
+    if (strlen(s) > 2)
+        printf("%s\n", s);
+    return s;
+}
+
+void *gestionJava() {
+    printf("gestionJava\n");
+    int UDPServerView;
+    int portUDPJava = PORTMULTIJAVA;
+    struct sockaddr_in javaInfo; // java
+    char *tousAvions;
+
+    /**
+     * UDP multicast pour java
+     */
+    if (UDPMulticast(&UDPServerView, MULTICASTGROUP, portUDPJava, &javaInfo) < 0) {
+        perror("UDPMulticast SGCA multicast");
+        exit(EXIT_FAILURE);
+    }
+
+    // envoie données aux consoles java
+    while (1) {
+        tousAvions = malloc(AVIONS.n * sizeof(struct avion) + sizeof(int));
+        tousAvions = RemplirInfosTousAvions();
+        sendto(UDPServerView, &tousAvions, sizeof(tousAvions), 0, (struct sockaddr *) &javaInfo, sizeof(javaInfo));
+
+        free(tousAvions);
+        sleep(2);
+    }
+
+}
+
 void *ecouteAvion(void *socket) {
     int sock = *((int*)socket);
     int compteur = 0;
@@ -81,48 +126,25 @@ void* tcpConnexion(void *portTCP) {
 }
 
 
-char *RemplirInfosTousAvions() {
-    char *s = malloc(AVIONS.n * sizeof(struct avion));
-    char *s2 = malloc(sizeof(struct avion));
-    sprintf(s, "%d\n", AVIONS.n);
-    int i;
-    for (i=0; i<AVIONS.n; i++) {
-        sprintf(s2, "%s%d%d%d%d%d\n", 
-            AVIONS.data[i].num_vol, AVIONS.data[i].x, AVIONS.data[i].y, AVIONS.data[i].altitude, AVIONS.data[i].cap, AVIONS.data[i].vitesse);
 
-        strcat(s, s2);
-        /*strcat(s, AVIONS.data[i].num_vol);
-        strcat(s, AVIONS.data[i].x);
-        strcat(s, AVIONS.data[i].y);
-        strcat(s, AVIONS.data[i].altitude);
-        strcat(s, AVIONS.data[i].cap);
-        strcat(s, AVIONS.data[i].vitesse);
-        */
-    }
-    //printf("%s\n", *s);
-    free(s2);
-    printf("%s\n", s);
-    return s;
-}
 
 int main(int argc, char *argv[])
 {
-    pthread_t threadtcp;
-    int portTCP, portUDPAvion, portUDPJava = PORTMULTIJAVA;
+    pthread_t threadtcp, threadUDPJava;
+    int portTCP, portUDPAvion;
     char *IPudp = MULTICASTGROUP;
     portUDPAvion = PORTMULTI;
     portTCP = PORTTCP;
-    int  UDPMcastClient, UDPServerView, UDPServerCtrl;
+    int  UDPMcastClient, UDPServerCtrl;
     /**
      * Multicast
      * UDP client
      */
     struct sockaddr_in tmpInfo; // avion
-    struct sockaddr_in javaInfo; // java
     AVIONS.n = 0;
     // 50 avions max
     AVIONS.data = malloc(sizeof(struct avion) * 50);
-    
+
 
     /**
      * UDP multicast pour avions
@@ -132,14 +154,8 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    /**
-     * UDP multicast pour java
-     */
-    if (UDPMulticast(&UDPServerView, IPudp, portUDPJava, &javaInfo) < 0) {
-        perror("UDPMulticast SGCA multicast");
-        exit(EXIT_FAILURE);
-    }
-    char *tousAvions;
+
+
     /* Création struct de connexion à envoyer au client */
     printf("envoie de %d vers %s:%d \n", portTCP, IPudp, portUDPAvion);
 
@@ -147,19 +163,15 @@ int main(int argc, char *argv[])
         perror("thread tcp error");
         return -1;
     }
+    if (pthread_create(&threadUDPJava, NULL, gestionJava, NULL) < 0) {
+        perror("thread UDP Java error");
+        return -1;
+    }
 
 
     while (1) {
 
         sendto(UDPMcastClient, &portTCP, sizeof(int), 0, (struct sockaddr *) &tmpInfo, sizeof(tmpInfo));
-
-        // envoie données aux consoles java
-        tousAvions = malloc(AVIONS.n * sizeof(struct avion) + sizeof(int));
-        tousAvions = RemplirInfosTousAvions();
-
-        sendto(UDPServerView, &tousAvions, sizeof(tousAvions), 0, (struct sockaddr *) &javaInfo, sizeof(javaInfo));
-
-        free(tousAvions);
 
         sleep(2);
 
