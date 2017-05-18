@@ -49,7 +49,6 @@ char *RemplirInfosTousAvions() {
 }
 
 void *gestionJava() {
-    printf("gestionJava\n");
     int UDPServerView;
     int portUDPJava = PORTMULTIJAVA;
     struct sockaddr_in javaInfo; // java
@@ -67,7 +66,8 @@ void *gestionJava() {
     while (1) {
         tousAvions = malloc(AVIONS.n * sizeof(struct avion) + sizeof(int));
         tousAvions = RemplirInfosTousAvions();
-        sendto(UDPServerView, &tousAvions, sizeof(tousAvions), 0, (struct sockaddr *) &javaInfo, sizeof(javaInfo));
+        if (strlen(tousAvions) > 2)
+            sendto(UDPServerView, &tousAvions, sizeof(tousAvions), 0, (struct sockaddr *) &javaInfo, sizeof(javaInfo));
 
         free(tousAvions);
         sleep(2);
