@@ -18,7 +18,7 @@ struct avion {
  */
 struct avionS{
 	int n;              // 4 byte
-	struct plane* data; // 26*[-] bytes
+	struct avion* data; // 26*[-] bytes
 };
 /**
  * SGCA -> plane (multicast regulier)
