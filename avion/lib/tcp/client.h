@@ -13,7 +13,7 @@
 #include <arpa/inet.h>
 #include <time.h>
 #include <string.h>
-	int connectTCP(int* pSocket, const uint32_t pAddr, const uint16_t pPort);
+	int connectTCP(int* pSocket, const char *pAddr, const int pPort);
 
 
 

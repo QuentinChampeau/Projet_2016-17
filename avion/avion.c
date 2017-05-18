@@ -37,6 +37,7 @@ int comm_sock; /* socket de communication */
  */
 int ouvrir_communication(){
 
+  static struct sockaddr_in addr_server;
 	struct sockaddr_in tmpInfo, from_addr;
 
 	char* buffer       = malloc( MAX_BUF_LEN );
@@ -57,26 +58,26 @@ int ouvrir_communication(){
   // receive packet from socket
   socklen_t socklen = sizeof(struct sockaddr_in);
   memset(&from_addr, 0, socklen);
-  printf("attente données de %s:%d\n", MULTICASTGROUP, PORTMULTI);
+  printf("attente données au port : %d\n", PORTMULTI);
    nb = recvfrom(conn_sock, buffer, MAX_BUF_LEN, 0, (struct sockaddr*)&from_addr, &socklen);
 	//nb = recv(conn_sock, buffer, MAX_BUF_LEN, 0);
 
 
-	printf("received : %d bytes\n", nb);
+  printf("reçu %d bytes de %s:%d\n", nb, inet_ntoa(from_addr.sin_addr), PORTMULTI);
 
-	memcpy(&tcpaddr, buffer,                  sizeof(uint32_t));
-	memcpy(&tcpport, buffer+sizeof(uint32_t), sizeof(uint16_t));
+	//memcpy(&tcpaddr, buffer,                  sizeof(uint32_t));
+	memcpy(&tcpport, buffer, sizeof(uint16_t));
 	close(conn_sock);
-	tcpaddr = ntohl(tcpaddr);
+	//tcpaddr = ntohl(tcpaddr);
 	tcpport = ntohs(tcpport);
 
-	
-	printf("received %s:%d\n", MULTICASTGROUP, tcpport);
+close(conn_sock);
+
 
 
 	/* [2] ConnectTCP
 	=========================================================*/
-	if( connectTCP(&comm_sock, tcpaddr, tcpport) < 0 ){
+	if( connectTCP(&comm_sock, inet_ntoa(from_addr.sin_addr), tcpport) < 0 ){
 		printf("Cannot connect to TCP server\n");
 		return 0;
 	}

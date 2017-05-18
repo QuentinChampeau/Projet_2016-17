@@ -41,13 +41,13 @@ int UDPMulticast(int* pSocket, const char *pAddr, const uint16_t pPort, struct s
 
 	/* [3] Socket opt
 	=========================================================*/
-	/* 1. Notification d'utilisation multiple du même port 
+	/* 1. Notification d'utilisation multiple du même port */
 	if( setsockopt(*pSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(u_int)) < 0 ){
 		perror("setsockopt");
 		close(*pSocket);
 		return -1;
 	}
-*/
+
 
 	/* [4] Bind socket
 	=========================================================*/

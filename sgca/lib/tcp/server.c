@@ -1,12 +1,12 @@
 #include "server.h"
 
-int connectTCP(int *pSocket, const uint32_t pAddr, const uint16_t pPort) {
+int connectTCP(int *pSocket, const char *pAddr, const int pPort) {
 
 	/* [0] initialize variables
 	=========================================================*/
-	struct sockaddr_in* target;
+	struct sockaddr_in target;
 
-	//memset(&target, 0, sizeof(struct sockaddr_in));
+	//memset(target, 0, sizeof(struct sockaddr_in));
 	/* [1] Create socket
 	=========================================================*/
 	*pSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -14,28 +14,27 @@ int connectTCP(int *pSocket, const uint32_t pAddr, const uint16_t pPort) {
 	if( *pSocket < 0 )
 		return -1;
 
-
 	/* [2] Create @pInfo
 	=========================================================*/
-	target->sin_family      = AF_INET;
-	target->sin_port        = htons(pPort);
-	target->sin_addr.s_addr = htonl(INADDR_ANY/*pAddr*/);
+	bzero((char *) &target, sizeof(target));
+	target.sin_family      = AF_INET;
+	target.sin_port        = htons(pPort);
+	target.sin_addr.s_addr = htonl(INADDR_ANY/*pAddr*/);
 
-
-	if (bind(*pSocket, (struct sockaddr *) target, sizeof(*target)) < 0) {
-		perror("bind failed\n");
+	if (bind(*pSocket, (struct sockaddr *) &target, sizeof(target)) < 0) {
+		perror("bind failed");
 		return -1;
 	}
-
+	printf("bind fait\n");
 	/* [3] Connect to server
 	=========================================================*/
 	if (listen(*pSocket, 5) < 0) {
-		perror("listen\n");
+		perror("listen");
 		return -1;
 	}
 
 	socklen_t addrlen = sizeof(struct sockaddr_in);
-	if( accept(*pSocket, (struct sockaddr*) target, &addrlen) < 0 ) {
+	if( accept(*pSocket, (struct sockaddr*) &target, &addrlen) < 0 ) {
 		perror("accept serveur");
 		return -1;
 	}
