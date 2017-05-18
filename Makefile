@@ -1,34 +1,35 @@
 FLAGMATH=-lpthread -lm
-CCFLAGS =
-AVIONFD=avion
-SGCAFD=sgca
-AVION=		$(AVIONFD)/avion
-SGCA=		$(SGCAFD)/SGCA
-AVIONUDP=	$(AVIONFD)/lib/udp/server
-AVIONTCP=	$(AVIONFD)/lib/tcp/client
-SGCAUDP=	$(SGCAFD)/lib/udp/client
-SGCATCP=	$(SGCAFD)/lib/tcp/server
+CCFLAGS = -g
+
+AVION	=avion
+SGCA	=sgca
+AVIONC	=$(AVION)/avion
+SGCAC	=$(SGCA)/SGCA
+SGCATCP	=$(SGCA)/lib/tcp/server
+SGCAUDP	=$(SGCA)/lib/udp/client
+AVIONTCP	=$(AVION)/lib/tcp/client
+AVIONUDP	=$(AVION)/lib/udp/server
 
 
 
 
-all: avion.out SGCA.out
+all: $(AVION).out $(SGCA).out
 
-avion.out: avion/avion.c avion/lib/tcp/client.o avion/lib/udp/server.o
-	gcc -g -o avion.out avion/avion.c avion/lib/tcp/client.o avion/lib/udp/server.o $(FLAGMATH)
+$(AVION).out: $(AVIONC).c $(AVIONTCP).o $(AVIONUDP).o
+	gcc $(CCFLAGS) -o $(AVION).out $(AVIONC).c $(AVIONTCP).o $(AVIONUDP).o $(FLAGMATH)
 
-SGCA.out: sgca/SGCA.c sgca/lib/tcp/server.o sgca/lib/udp/client.o
-	gcc -g -o SGCA.out sgca/SGCA.c sgca/lib/tcp/server.o sgca/lib/udp/client.o $(FLAGMATH)
+$(SGCA).out: $(SGCAC).c $(SGCATCP).o $(SGCAUDP).o
+	gcc $(CCFLAGS) -o $(SGCA).out $(SGCAC).c $(SGCATCP).o $(SGCAUDP).o $(FLAGMATH)
 
-avion/lib/tcp/client.o: avion/lib/tcp/client.c avion/lib/tcp/client.h
-	gcc -g -o avion/lib/tcp/client.o -c avion/lib/tcp/client.c
-avion/lib/udp/server.o: avion/lib/udp/server.c avion/lib/udp/server.h
-	gcc -g -o avion/lib/udp/server.o -c avion/lib/udp/server.c
+$(AVIONTCP).o: $(AVIONTCP).c $(AVIONTCP).h
+	gcc $(CCFLAGS) -o $(AVIONTCP).o -c $(AVIONTCP).c
+$(AVIONUDP).o: $(AVIONUDP).c $(AVIONUDP).h
+	gcc $(CCFLAGS) -o $(AVIONUDP).o -c $(AVIONUDP).c
 
-sgca/lib/tcp/server.o: sgca/lib/tcp/server.c sgca/lib/tcp/server.h
-	gcc -g -o sgca/lib/tcp/server.o -c sgca/lib/tcp/server.c
-sgca/lib/udp/client.o: sgca/lib/udp/client.c sgca/lib/udp/client.h
-	gcc -g -o sgca/lib/udp/client.o -c sgca/lib/udp/client.c
+$(SGCATCP).o: $(SGCATCP).c $(SGCATCP).h
+	gcc $(CCFLAGS) -o $(SGCATCP).o -c $(SGCATCP).c
+$(SGCAUDP).o: $(SGCAUDP).c $(SGCAUDP).h
+	gcc $(CCFLAGS) -o $(SGCAUDP).o -c $(SGCAUDP).c
 
 #
 #lib/udpserver.o: lib/udp/server.c lib/udp/server.h
@@ -41,4 +42,4 @@ sgca/lib/udp/client.o: sgca/lib/udp/client.c sgca/lib/udp/client.h
 #	gcc $(CCFLAGS) -o avion.out lib/tcpclient.o lib/udpserver.o avion.c $(FLAGMATH)
 #
 clean:
-	rm -f avion.out SGCA.out avion/lib/tcp/client.o avion/lib/udp/server.o sgca/lib/tcp/server.o sgca/lib/udp/client.o
+	rm -f $(AVION).out $(SGCA).out $(AVIONTCP).o $(AVIONUDP).o $(SGCATCP).o $(SGCAUDP).o

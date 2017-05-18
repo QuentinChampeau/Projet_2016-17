@@ -29,22 +29,24 @@
 
 
 void *ecouteAvion(void *socket) {
-    printf("écoute avionn\n");
     int sock = *((int*)socket);
-    struct coordonnees coord;
-    int nb;
+    int compteur = 0;
     struct avion av;
-    while (1) {
-        nb = read(sock, &av, sizeof(struct avion));
+    while (read(sock, &av, sizeof(struct avion)) != 0) {
+        if (compteur == 0) {
+            printf("Nouvel avion \"%s\"\n", av.num_vol);
+            compteur++;
+        }
         printf("Avion %s -> localisation : (%d,%d), altitude : %d, vitesse : %d, cap : %d\n",
    av.num_vol, av.x, av.y, av.altitude, av.vitesse, av.cap);
-        //printf(" x -> %d, y -> %d, altitude -> %d\n", coord.x, coord.y, coord.altitude);
         sleep(2);
     }
+    printf("Avion \"%s\" quitté.\n", av.num_vol);
+
+    return 0;
 }
 
 void* tcpConnexion(void *portTCP) {
-    char *buffer = malloc(MAX_BUF_LEN);
     struct sockaddr_in target;
     int port = *((int*)portTCP);
     pthread_t nouveauThread;
@@ -60,7 +62,6 @@ void* tcpConnexion(void *portTCP) {
 
     while (1) {
         nvelleSock = accept(TCPServer, (struct sockaddr*) &target, &addrlen);
-        printf("Accept fait\n");
         if (nvelleSock < 0) {
             perror("accept serveur");
             exit(EXIT_FAILURE);
@@ -69,8 +70,6 @@ void* tcpConnexion(void *portTCP) {
         pthread_create(&nouveauThread, NULL, ecouteAvion, &nvelleSock);
     }
 
-    //send(comm_sock, buffer, strlen(buffer), 0);
-   //  pthread_exit(NULL);
 }
 
 
@@ -82,7 +81,6 @@ int main(int argc, char *argv[])
     portUDP = PORTMULTI;
     portTCP = PORTTCP;
     int  UDPMcastClient, UDPServerView, UDPServerCtrl;
-    char* buffer       = malloc( MAX_BUF_LEN );
     /**
      * Multicast
      * UDP client

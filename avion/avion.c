@@ -40,39 +40,38 @@ int comm_sock; /* socket de communication */
  */
 int ouvrir_communication(){
 
-  static struct sockaddr_in addr_server;
 	struct sockaddr_in tmpInfo, from_addr;
 
-	char* buffer       = malloc( MAX_BUF_LEN );
 	int nb;
 
 	int tcpport;
 
-	/* [1] Connect to SGCA Multicast socket
-	=========================================================*/
-	/* (1) Create UDP Socket */
+	/**
+   * Création socket UDP multicast
+   */
 	if( UDPMulticast(&conn_sock, MULTICASTGROUP, PORTMULTI, &tmpInfo) < 0 ) {
 		printf("Cannot join Multicast Group %s:%d\n", MULTICASTGROUP, PORTMULTI);
 		return 0;
 	}
 
-	/* (2) Wait for SGCA credentials */
-  // receive packet from socket
+	/**
+   * Réception paquet pour avoir les données TCP
+   */
   socklen_t socklen = sizeof(struct sockaddr_in);
   memset(&from_addr, 0, socklen);
   printf("attente données au port : %d\n", PORTMULTI);
   nb = recvfrom(conn_sock, &tcpport, sizeof(tcpport), 0, (struct sockaddr*)&from_addr, &socklen);
 
 
-  printf("reçu %d bytes de %s:%d\n", nb, inet_ntoa(from_addr.sin_addr), tcpport);
+  // printf("reçu %d bytes de %s:%d\n", nb, inet_ntoa(from_addr.sin_addr), tcpport);
 
 
 	fermer_communication();
 
-
-	/* [2] ConnectTCP
-	=========================================================*/
-	if( connectTCP(&comm_sock, inet_ntoa(from_addr.sin_addr), tcpport) < 0 ){
+  /**
+   * Création socket TCP
+   */
+	if( connectTCP(&comm_sock, inet_ntoa(from_addr.sin_addr), tcpport) < 0 ) {
 		printf("Cannot connect to TCP server\n");
 		return 0;
 	}
@@ -101,7 +100,6 @@ void envoyer_caracteristiques()
     av.cap = dep.cap;
     av.vitesse = dep.vitesse;
 
-    printf("envoie coord\n");
     write(comm_sock, &av, sizeof(struct avion));
 
 }
@@ -171,9 +169,9 @@ void afficher_donnees()
 // recalcule la localisation de l'avion en fonction de sa vitesse et de son cap
 void calcul_deplacement()
 {
- float cosinus, sinus;
+ //float cosinus, sinus;
  float dep_x, dep_y;
- int nb;
+ // int nb;
 
  if (dep.vitesse < VITMIN)
  {
@@ -188,8 +186,8 @@ if (coord.altitude == 0)
   exit(3);
 }
 
-cosinus = cos(dep.cap * 2 * M_PI / 360);
-sinus = sin(dep.cap * 2 * M_PI / 360);
+//cosinus = cos(dep.cap * 2 * M_PI / 360);
+//sinus = sin(dep.cap * 2 * M_PI / 360);
 
 dep_x = cos(dep.cap * 2 * M_PI / 360) * dep.vitesse * 10 / VITMIN;
 dep_y = sin(dep.cap * 2 * M_PI / 360) * dep.vitesse * 10 / VITMIN;
@@ -238,4 +236,5 @@ int main()
 
   // on se déplace une fois toutes les initialisations faites
 se_deplacer();
+return 0;
 }
