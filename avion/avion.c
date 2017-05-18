@@ -1,4 +1,5 @@
 #include "avion.h"
+#include "stub.h"
 #include "lib/udp/server.h"
 #include "lib/tcp/client.h"
 
@@ -11,6 +12,8 @@ struct coordonnees coord;
 // numéro de vol de l'avion : code sur 5 caractères
 char numero_vol[6];
 
+
+struct avion av;
 /**
  * Gestion du multicast
  */
@@ -43,7 +46,6 @@ int ouvrir_communication(){
 	char* buffer       = malloc( MAX_BUF_LEN );
 	int nb;
 
-	uint32_t tcpaddr;
 	int tcpport;
 
 	/* [1] Connect to SGCA Multicast socket
@@ -59,19 +61,13 @@ int ouvrir_communication(){
   socklen_t socklen = sizeof(struct sockaddr_in);
   memset(&from_addr, 0, socklen);
   printf("attente données au port : %d\n", PORTMULTI);
-   nb = recvfrom(conn_sock, &tcpport, sizeof(tcpport), 0, (struct sockaddr*)&from_addr, &socklen);
-	//nb = recv(conn_sock, buffer, MAX_BUF_LEN, 0);
+  nb = recvfrom(conn_sock, &tcpport, sizeof(tcpport), 0, (struct sockaddr*)&from_addr, &socklen);
 
 
   printf("reçu %d bytes de %s:%d\n", nb, inet_ntoa(from_addr.sin_addr), tcpport);
 
-  memcpy(buffer, "coucou\0", strlen("coucou\0"));
-  sendto(conn_sock, buffer, strlen(buffer), 0, (struct sockaddr*) &from_addr, sizeof(from_addr));
 
-	//memcpy(&tcpaddr, buffer,                  sizeof(uint32_t));
-	close(conn_sock);
-	//tcpaddr = ntohl(tcpaddr);
-
+	fermer_communication();
 
 
 	/* [2] ConnectTCP
@@ -81,10 +77,6 @@ int ouvrir_communication(){
 		return 0;
 	}
 
-	strcpy(buffer, "It works!!");
-	printf("Sending buffer to TCP server\n");
-	send(comm_sock, buffer, strlen(buffer), 0);
-
 	return 1;
 }
 
@@ -92,22 +84,25 @@ void fermer_communication()
 {
   // fonction à implémenter qui permet de fermer la communication
   // avec le gestionnaire de vols
- /*close(sock);*/
+  close(conn_sock);
 }
 
 void envoyer_caracteristiques()
 {
-/*
-   // nombre d'octets envoyés/reçus
-   int nb_octets;
+
+   // nombre d'octets envoyes/reçus
    // fonction à implémenter qui envoie l'ensemble des caractéristiques
    // courantes de l'avion au gestionnaire de vols
-   if (sendto(sock,&coord,sizeof(struct coordonnees),0,(struct sockaddr *) &addr_SGCA, sizeof(addr_SGCA)) < 0) {
-   //send(sock, &coord, sizeof(struct coordonnees), 0);
-      perror("send failed");
-      exit(EXIT_FAILURE);
-   }
-*/
+
+    strcpy(av.num_vol, numero_vol);
+    av.x = coord.x;
+    av.y = coord.y;
+    av.altitude = coord.altitude;
+    av.cap = dep.cap;
+    av.vitesse = dep.vitesse;
+
+    printf("envoie coord\n");
+    write(comm_sock, &av, sizeof(struct avion));
 
 }
 
@@ -220,6 +215,7 @@ void se_deplacer()
 {
  while(1)
  {
+  printf("déplacement\n");
   calcul_deplacement();
   envoyer_caracteristiques();
 

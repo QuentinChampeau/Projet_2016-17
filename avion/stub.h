@@ -3,7 +3,7 @@
 /**
  * Plane -> SGCA
  */
-struct avion{
+struct avion {
 	char num_vol[6]; // 6 bytes
 	int  x;           // 4 bytes
 	int  y;           // 4 bytes
@@ -49,7 +49,7 @@ struct mise_a_jour{
 
 
 
-
+/*
 
 // gestion globale
 pthread_t mainthreads[4];
@@ -121,3 +121,4 @@ int main(){
 
 	return EXIT_SUCCESS;
 }
+*/

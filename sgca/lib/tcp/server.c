@@ -1,6 +1,6 @@
 #include "server.h"
 
-int connectTCP(int *pSocket, const char *pAddr, const int pPort) {
+int connectTCP(int *pSocket, const int pPort) {
 
 	/* [0] initialize variables
 	=========================================================*/
@@ -19,7 +19,7 @@ int connectTCP(int *pSocket, const char *pAddr, const int pPort) {
 	bzero((char *) &target, sizeof(target));
 	target.sin_family      = AF_INET;
 	target.sin_port        = htons(pPort);
-	target.sin_addr.s_addr = htonl(INADDR_ANY/*pAddr*/);
+	target.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	if (bind(*pSocket, (struct sockaddr *) &target, sizeof(target)) < 0) {
 		perror("bind failed");

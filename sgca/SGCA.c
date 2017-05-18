@@ -12,9 +12,9 @@
 #include "lib/avion.h"
 #include "lib/udp/client.h"
 #include "lib/tcp/server.h"
+#include "../avion/stub.h"
  #include <pthread.h>
 
-#define MSGBUFSIZE 256
 
 /* multicast */
 /*  1024 à 65535 */
@@ -24,55 +24,64 @@
 
 /* connexion TCP */
 #define PORTTCP 1234
-#define HOST "localhost" /* 127.0.0.1 */
 
-#define MAXPENDING 1
 #define MAX_BUF_LEN 256
 
 
 void *ecouteAvion(void *socket) {
+    printf("écoute avionn\n");
     int sock = *((int*)socket);
     struct coordonnees coord;
-    while (recv(sock, &coord, sizeof(struct coordonnees), 0) < 0) {}
+    int nb;
+    struct avion av;
+    while (1) {
+        nb = read(sock, &av, sizeof(struct avion));
+        printf("Avion %s -> localisation : (%d,%d), altitude : %d, vitesse : %d, cap : %d\n",
+   av.num_vol, av.x, av.y, av.altitude, av.vitesse, av.cap);
+        //printf(" x -> %d, y -> %d, altitude -> %d\n", coord.x, coord.y, coord.altitude);
+        sleep(2);
+    }
 }
 
 void* tcpConnexion(void *portTCP) {
     char *buffer = malloc(MAX_BUF_LEN);
+    struct sockaddr_in target;
     int port = *((int*)portTCP);
     pthread_t nouveauThread;
     int TCPServer;
-    if (connectTCP(&TCPServer, "coucou", port) < 0) {
+    int nvelleSock = 0;
+
+
+    if (connectTCP(&TCPServer, port) < 0) {
         perror("connectTCP SCA failed");
         exit(EXIT_FAILURE);
     }
-
-    socklen_t addrlen = sizeof(struct sockaddr_in);
-    int nvelleSock = 0;
-    nvelleSock = accept(*pSocket, (struct sockaddr*) &target, &addrlen) < 0 );
-    if (nvelleSock < 0) {
-        perror("accept serveur");
-        return -1;
-    }
-
-    pthread_create(&nouveauThread, NULL, ecouteAvion, &nvelleSock)
-
+        socklen_t addrlen = sizeof(struct sockaddr_in);
 
     while (1) {
-        printf("on lit\n");
-        if (recv(TCPServer, &buffer, sizeof(buffer), 0) < 0) {
-            perror("recv");
+        nvelleSock = accept(TCPServer, (struct sockaddr*) &target, &addrlen);
+        printf("Accept fait\n");
+        if (nvelleSock < 0) {
+            perror("accept serveur");
+            exit(EXIT_FAILURE);
         }
-        sleep(2);
+
+        pthread_create(&nouveauThread, NULL, ecouteAvion, &nvelleSock);
     }
+
     //send(comm_sock, buffer, strlen(buffer), 0);
-    pthread_exit(NULL);
+   //  pthread_exit(NULL);
 }
 
 
 int main(int argc, char *argv[])
 {
     pthread_t threadtcp;
-    int TCPServer, UDPMcastClient, UDPServerView, UDPServerCtrl;
+    int portTCP, portUDP;
+    char *IPudp = MULTICASTGROUP;
+    portUDP = PORTMULTI;
+    portTCP = PORTTCP;
+    int  UDPMcastClient, UDPServerView, UDPServerCtrl;
     char* buffer       = malloc( MAX_BUF_LEN );
     /**
      * Multicast
@@ -80,29 +89,15 @@ int main(int argc, char *argv[])
      */
     struct sockaddr_in tmpInfo;
 
-    //char* buffer       = malloc( MAX_BUF_LEN );
-    uint32_t tcpaddr;
-    int tcpport;
 
-    //tcpaddr = htonl(MULTICASTGROUP);
-    //tcpport = ntohs(PORTMULTI);
-
-
-    if (UDPMulticast(&UDPMcastClient, MULTICASTGROUP, PORTMULTI, &tmpInfo) < 0) {
+    if (UDPMulticast(&UDPMcastClient, IPudp, portUDP, &tmpInfo) < 0) {
         perror("UDPMulticast SGCA multicast");
         exit(EXIT_FAILURE);
     }
 
 
     /* Création struct de connexion à envoyer au client */
-    int portTCP = 1234;
-    int socklen = sizeof(struct sockaddr_in);
-    printf("envoie de %d vers %s:%d \n", tcpport, MULTICASTGROUP, PORTMULTI);
-    //memcpy(buffer, &tcpport, sizeof(int));
-
-    //printf("%s\n", buffer);
-    int nb;
-    socklen_t infoLen = sizeof(tmpInfo);
+    printf("envoie de %d vers %s:%d \n", portTCP, IPudp, portUDP);
 
     if (pthread_create(&threadtcp, NULL, tcpConnexion, &portTCP) < 0) {
         perror("thread tcp error");
@@ -111,7 +106,7 @@ int main(int argc, char *argv[])
 
     while (1) {
 
-        sendto(UDPMcastClient, &tcpport, sizeof(int), 0, (struct sockaddr *) &tmpInfo, sizeof(tmpInfo));
+        sendto(UDPMcastClient, &portTCP, sizeof(int), 0, (struct sockaddr *) &tmpInfo, sizeof(tmpInfo));
         sleep(2);
 
     }
