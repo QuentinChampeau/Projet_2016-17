@@ -15,10 +15,10 @@ SGCATCP=	$(SGCAFD)/lib/tcp/server
 all: avion.out SGCA.out
 
 avion.out: avion/avion.c avion/lib/tcp/client.o avion/lib/udp/server.o
-	gcc -g -o avion.out avion/avion.c avion/lib/tcp/client.o avion/lib/udp/server.o
+	gcc -g -o avion.out avion/avion.c avion/lib/tcp/client.o avion/lib/udp/server.o $(FLAGMATH)
 
 SGCA.out: sgca/SGCA.c sgca/lib/tcp/server.o sgca/lib/udp/client.o
-	gcc -g -o SGCA.out sgca/SGCA.c sgca/lib/tcp/server.o sgca/lib/udp/client.o
+	gcc -g -o SGCA.out sgca/SGCA.c sgca/lib/tcp/server.o sgca/lib/udp/client.o $(FLAGMATH)
 
 avion/lib/tcp/client.o: avion/lib/tcp/client.c avion/lib/tcp/client.h
 	gcc -g -o avion/lib/tcp/client.o -c avion/lib/tcp/client.c

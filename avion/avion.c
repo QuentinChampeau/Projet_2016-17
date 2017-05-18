@@ -44,7 +44,7 @@ int ouvrir_communication(){
 	int nb;
 
 	uint32_t tcpaddr;
-	uint16_t tcpport;
+	int tcpport;
 
 	/* [1] Connect to SGCA Multicast socket
 	=========================================================*/
@@ -59,19 +59,18 @@ int ouvrir_communication(){
   socklen_t socklen = sizeof(struct sockaddr_in);
   memset(&from_addr, 0, socklen);
   printf("attente données au port : %d\n", PORTMULTI);
-   nb = recvfrom(conn_sock, buffer, MAX_BUF_LEN, 0, (struct sockaddr*)&from_addr, &socklen);
+   nb = recvfrom(conn_sock, &tcpport, sizeof(tcpport), 0, (struct sockaddr*)&from_addr, &socklen);
 	//nb = recv(conn_sock, buffer, MAX_BUF_LEN, 0);
 
 
-  printf("reçu %d bytes de %s:%d\n", nb, inet_ntoa(from_addr.sin_addr), PORTMULTI);
+  printf("reçu %d bytes de %s:%d\n", nb, inet_ntoa(from_addr.sin_addr), tcpport);
+
+  memcpy(buffer, "coucou\0", strlen("coucou\0"));
+  sendto(conn_sock, buffer, strlen(buffer), 0, (struct sockaddr*) &from_addr, sizeof(from_addr));
 
 	//memcpy(&tcpaddr, buffer,                  sizeof(uint32_t));
-	memcpy(&tcpport, buffer, sizeof(uint16_t));
 	close(conn_sock);
 	//tcpaddr = ntohl(tcpaddr);
-	tcpport = ntohs(tcpport);
-
-close(conn_sock);
 
 
 

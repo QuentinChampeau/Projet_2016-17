@@ -33,12 +33,6 @@ int connectTCP(int *pSocket, const char *pAddr, const int pPort) {
 		return -1;
 	}
 
-	socklen_t addrlen = sizeof(struct sockaddr_in);
-	if( accept(*pSocket, (struct sockaddr*) &target, &addrlen) < 0 ) {
-		perror("accept serveur");
-		return -1;
-	}
-
 
 	/* [3] Return data
 	=========================================================*/

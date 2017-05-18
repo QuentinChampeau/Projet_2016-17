@@ -29,16 +29,40 @@
 #define MAXPENDING 1
 #define MAX_BUF_LEN 256
 
-void* tcpConnexion(int TCPServer) {
+
+void *ecouteAvion(void *socket) {
+    int sock = *((int*)socket);
+    struct coordonnees coord;
+    while (recv(sock, &coord, sizeof(struct coordonnees), 0) < 0) {}
+}
+
+void* tcpConnexion(void *portTCP) {
     char *buffer = malloc(MAX_BUF_LEN);
-    
-    printf("coucou\n");
+    int port = *((int*)portTCP);
+    pthread_t nouveauThread;
+    int TCPServer;
+    if (connectTCP(&TCPServer, "coucou", port) < 0) {
+        perror("connectTCP SCA failed");
+        exit(EXIT_FAILURE);
+    }
+
+    socklen_t addrlen = sizeof(struct sockaddr_in);
+    int nvelleSock = 0;
+    nvelleSock = accept(*pSocket, (struct sockaddr*) &target, &addrlen) < 0 );
+    if (nvelleSock < 0) {
+        perror("accept serveur");
+        return -1;
+    }
+
+    pthread_create(&nouveauThread, NULL, ecouteAvion, &nvelleSock)
+
 
     while (1) {
         printf("on lit\n");
         if (recv(TCPServer, &buffer, sizeof(buffer), 0) < 0) {
             perror("recv");
         }
+        sleep(2);
     }
     //send(comm_sock, buffer, strlen(buffer), 0);
     pthread_exit(NULL);
@@ -58,7 +82,7 @@ int main(int argc, char *argv[])
 
     //char* buffer       = malloc( MAX_BUF_LEN );
     uint32_t tcpaddr;
-    uint16_t tcpport;
+    int tcpport;
 
     //tcpaddr = htonl(MULTICASTGROUP);
     //tcpport = ntohs(PORTMULTI);
@@ -71,22 +95,28 @@ int main(int argc, char *argv[])
 
 
     /* Création struct de connexion à envoyer au client */
-    tcpport = 1234;
+    int portTCP = 1234;
     int socklen = sizeof(struct sockaddr_in);
     printf("envoie de %d vers %s:%d \n", tcpport, MULTICASTGROUP, PORTMULTI);
-    memcpy(buffer, &tcpport, sizeof(uint16_t));
-    if (connectTCP(&TCPServer, "coucou", PORTTCP) < 0) {
-        perror("connectTCP SCA failed");
-        exit(EXIT_FAILURE);
+    //memcpy(buffer, &tcpport, sizeof(int));
+
+    //printf("%s\n", buffer);
+    int nb;
+    socklen_t infoLen = sizeof(tmpInfo);
+
+    if (pthread_create(&threadtcp, NULL, tcpConnexion, &portTCP) < 0) {
+        perror("thread tcp error");
+        return -1;
     }
+
     while (1) {
 
-        sendto(UDPMcastClient, buffer, MAX_BUF_LEN, 0, (struct sockaddr *) &tmpInfo, sizeof(tmpInfo));
-        if (pthread_create(&threadtcp, NULL, tcpConnexion, tcpport) < 0) {
-            perror("thread tcp error");
-            return -1;
-        }
+        sendto(UDPMcastClient, &tcpport, sizeof(int), 0, (struct sockaddr *) &tmpInfo, sizeof(tmpInfo));
+        sleep(2);
+
     }
+
+
     return 0;
 
 }
