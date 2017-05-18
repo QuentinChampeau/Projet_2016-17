@@ -62,7 +62,6 @@ int ouvrir_communication(){
   printf("attente données au port : %d\n", PORTMULTI);
   nb = recvfrom(conn_sock, &tcpport, sizeof(tcpport), 0, (struct sockaddr*)&from_addr, &socklen);
 
-
   // printf("reçu %d bytes de %s:%d\n", nb, inet_ntoa(from_addr.sin_addr), tcpport);
 
 
@@ -75,7 +74,7 @@ int ouvrir_communication(){
 		printf("Cannot connect to TCP server\n");
 		return 0;
 	}
-
+  printf("Connecté au SGCA\n");
 	return 1;
 }
 
