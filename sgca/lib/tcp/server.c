@@ -3,6 +3,7 @@
 int connectTCP(int *pSocket, const int pPort) {
 
 	struct sockaddr_in target;
+	 int reuse = 1;
 
 	/**
 	 * Création socket
@@ -23,6 +24,12 @@ int connectTCP(int *pSocket, const int pPort) {
 	/**
 	 * Bind socket au port
 	 */
+
+
+	if (setsockopt(*pSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
+		perror("setsockopt reusse");
+		return -1;
+	}
 	if (bind(*pSocket, (struct sockaddr *) &target, sizeof(target)) < 0) {
 		perror("bind failed");
 		return -1;
