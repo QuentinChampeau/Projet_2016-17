@@ -1,5 +1,5 @@
-
-
+#ifndef _STUB_H_
+	#define _STUB_H_
 /**
  * Plane -> SGCA
  */
@@ -14,7 +14,7 @@ struct avion {
 
 
 /**
- * SGCA -> viewTerm (si trop chiant, faire une publication periodique multicast)
+ * SGCA -> viewTerm
  */
 struct avionS{
 	int n;              // 4 byte
@@ -43,82 +43,4 @@ struct mise_a_jour{
 	int  vitesse;    // 4 byte
 };
 
-
-
-
-
-
-
-/*
-
-// gestion globale
-pthread_t mainthreads[4];
-char      mainactive[4];
-
-// gestion avions
-pthread_t tcpthreads[10];
-char      tcpactive[10];
-
-// gestion terminaux visu
-pthread_t visuthreads[10];
-char      visuactive[10];
-
-void* gererAvion(intptr_t* pParam){
-	char a;
-	int* socket = (intptr_t) pParam;
-
-	while(){}
-		recv(socket, ...);
-		storedataFromPlane...
-	}
-
-
-	for( a = 0 ; a < 10 ; a++ )
-		if( tcpthreads[a] == pthread_self() )
-			tcpactive[a] = 0; // thread libere
-
-	pthread_exit(null);
-}
-
-
-
-int main(){
-
-	char a, b, c, d, e, f;
-
-	for( a = 0 ; a < 10 ; a++ )
-		tcpactive[a] = 0;
-
-	int listenSocket = createTCPServer(ip, port, ..);
-	int comSock;
-
-
-	while(){
-		comSock = accept(listenSocket, ...);
-
-
-		for( a = 0 ; a < 10 ; a++ )
-			if( tcpactive[a] == 0 ) // emplacement thread libre
-				break;
-
-		// si plus de place
-		if( a == 10 )
-			break;
-
-		tcpactive[a] = 1; // thread pris
-		tcpthread[a] = pthread_create(gererAvion, (void*) &comSock, ...);
-
-	}
-
-
-
-	..........
-
-
-
-	for( a = 0 ; a < 10 ; a++ )
-		pthread_join(tcpthread[a]);
-
-	return EXIT_SUCCESS;
-}
-*/
+#endif
