@@ -20,7 +20,7 @@ public class Co_UDP {
 	String[] S;
 
 	/**
-	 *
+	 * Crée la connexion avec le SGCA pour recevoir les coordonnées des avions
 	 * @param
 	 * @return 
 	 */
@@ -97,7 +97,12 @@ public class Co_UDP {
 			e.printStackTrace();
 		}
 	}
-
+        
+	/**
+	 * Affiche les coordonnées des avions
+	 * @param avion contient toutes les informations à savoir sur l'avion
+	 * @return 
+	 */
 	public void Affiche(Avion avion) {
 		System.out.println("*************************");
 		System.out.println("** Console d'affichage **");
