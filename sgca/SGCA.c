@@ -34,10 +34,10 @@ struct avionS AVIONS;
 char *RemplirInfosTousAvions() {
     char *s = malloc(AVIONS.n * sizeof(struct avion));
     char *s2 = malloc(sizeof(struct avion));
-    sprintf(s, "%d\n", AVIONS.n);
+    sprintf(s, "%d/", AVIONS.n);
     int i;
     for (i=0; i<AVIONS.n; i++) {
-        sprintf(s2, "%s%d%d%d%d%d\n", 
+        sprintf(s2, "%s/%d/%d/%d/%d/%d/", 
             AVIONS.data[i].num_vol, AVIONS.data[i].x, AVIONS.data[i].y, AVIONS.data[i].altitude, AVIONS.data[i].cap, AVIONS.data[i].vitesse);
         strcat(s, s2);
     }
@@ -67,8 +67,7 @@ void *gestionJava() {
         tousAvions = malloc(AVIONS.n * sizeof(struct avion) + sizeof(int));
         tousAvions = RemplirInfosTousAvions();
         if (strlen(tousAvions) > 2)
-            sendto(UDPServerView, &tousAvions, sizeof(tousAvions), 0, (struct sockaddr *) &javaInfo, sizeof(javaInfo));
-
+            sendto(UDPServerView, tousAvions, AVIONS.n* sizeof(struct avion) + 7, 0, (struct sockaddr *) &javaInfo, sizeof(javaInfo));
         free(tousAvions);
         sleep(2);
     }
